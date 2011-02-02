@@ -1,0 +1,1 @@
+Utilities for reading from an arduino device. Provides a socket so multiple applications can read from a single arduino advice.
