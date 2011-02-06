@@ -31,6 +31,11 @@
 #include <sys/socket.h>
 #include <sys/un.h>
 
+// Apple Mac OS X fixes
+#ifdef __APPLE__
+#define MSG_NOSIGNAL SO_NOSIGPIPE
+#endif
+
 // Location of the socket
 #ifndef SOCKET_PATH
 #define SOCKET_PATH "/tmp/arduino.sock"

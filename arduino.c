@@ -34,8 +34,14 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/un.h>
+#include <sys/stat.h>
 #include <map>
 #include <list>
+
+// Apple Mac OS X fixes
+#ifdef __APPLE__
+#define MSG_NOSIGNAL SO_NOSIGPIPE
+#endif
 
 // Location of the socket
 #ifndef SOCKET_PATH
