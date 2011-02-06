@@ -43,73 +43,65 @@
 
 // Quit handler
 static int want_to_quit = 0;
-void sighandler(int sig)
-{
-	want_to_quit = 1;
+void sighandler(int sig) {
+  want_to_quit = 1;
 }
 
-int main (int argc, char ** argv)
-{
-	// Generate the bitmask to send
-	unsigned char bitmask = 0x00;
-	int i;
-	for (i = 1; i < argc; i++)
-	{
-		int input = atoi(argv[i]);
-		if (input == 0)
-			continue;
+int main (int argc, char ** argv) {
+  // Generate the bitmask to send
+  unsigned char bitmask = 0x00;
+  int i;
+  for (i = 1; i < argc; i++) {
+    int input = atoi(argv[i]);
+    if (input == 0)
+      continue;
 
-		bitmask |= (0x01 << (input - 1));
-	}
+    bitmask |= (0x01 << (input - 1));
+  }
 
-	// No inputs?
-	if (bitmask == 0x00)
-	{
-		fprintf(stderr, "Usage: %s [input1] [input2] ...\n", argv[0]);
-		return EXIT_FAILURE;
-	}
+  // No inputs?
+  if (bitmask == 0x00) {
+    fprintf(stderr, "Usage: %s [input1] [input2] ...\n", argv[0]);
+    return EXIT_FAILURE;
+  }
 
-	// Setup the socket
-	int sock = socket(AF_UNIX, SOCK_STREAM, 0);
-	if (sock == -1)
-	{
-        	perror("socket");
-	        return EXIT_FAILURE;
-	}
+  // Setup the socket
+  int sock = socket(AF_UNIX, SOCK_STREAM, 0);
+  if (sock == -1) {
+          perror("socket");
+          return EXIT_FAILURE;
+  }
 
-	// Create the struct for connecting to the socket
-	struct sockaddr_un addr;
-	memset(&addr, 0, sizeof(struct sockaddr_un));
-	addr.sun_family = AF_UNIX;
-	strncpy(addr.sun_path, SOCKET_PATH, sizeof(addr.sun_path) - 1);
+  // Create the struct for connecting to the socket
+  struct sockaddr_un addr;
+  memset(&addr, 0, sizeof(struct sockaddr_un));
+  addr.sun_family = AF_UNIX;
+  strncpy(addr.sun_path, SOCKET_PATH, sizeof(addr.sun_path) - 1);
 
-	// Connect to it
-	if (connect(sock, (struct sockaddr*)&addr, sizeof(struct sockaddr_un)) == -1)
-	{
-		perror("connect");
-		return EXIT_FAILURE;
-	}
+  // Connect to it
+  if (connect(sock, (struct sockaddr*)&addr, sizeof(struct sockaddr_un)) == -1) {
+    perror("connect");
+    return EXIT_FAILURE;
+  }
 
-	// Send the inputs request
-	send(sock, &bitmask, 1, MSG_NOSIGNAL);
+  // Send the inputs request
+  send(sock, &bitmask, 1, MSG_NOSIGNAL);
 
-	// Signal handlers
-	signal(SIGINT, sighandler);
-	signal(SIGQUIT, sighandler);
-	signal(SIGABRT, sighandler);
-	signal(SIGKILL, sighandler);
-	signal(SIGTERM, sighandler);
+  // Signal handlers
+  signal(SIGINT, sighandler);
+  signal(SIGQUIT, sighandler);
+  signal(SIGABRT, sighandler);
+  signal(SIGKILL, sighandler);
+  signal(SIGTERM, sighandler);
 
-	// Loop until asked to quit
-	while (want_to_quit == 0)
-	{
-		char buffer[16];
-		int ret = recv(sock, buffer, sizeof(buffer), MSG_NOSIGNAL);
-		if (ret == -1)
-			break;
-		printf("%*s", ret, buffer);
-	}
-
-	
-	return EXIT_SUCCESS;
+  // Loop until asked to quit
+  while (want_to_quit == 0) {
+    char buffer[16];
+    int ret = recv(sock, buffer, sizeof(buffer), MSG_NOSIGNAL);
+    if (ret == -1)
+      break;
+    printf("%*s", ret, buffer);
+  }
+  
+  return EXIT_SUCCESS;
 }
