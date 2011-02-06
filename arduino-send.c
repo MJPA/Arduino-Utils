@@ -41,45 +41,41 @@
 #define SOCKET_PATH "/tmp/arduino.sock"
 #endif
 
-int main (int argc, char ** argv)
-{
-	// Ensure we have something to send
-	if (argc != 2)
-	{
-		fprintf(stderr, "Usage: %s <data>\n", argv[0]);
-		return EXIT_FAILURE;
-	}
+int main (int argc, char ** argv) {
+  // Ensure we have something to send
+  if (argc != 2) {
+    fprintf(stderr, "Usage: %s <data>\n", argv[0]);
+    return EXIT_FAILURE;
+  }
 
-	// Setup the socket
-	int sock = socket(AF_UNIX, SOCK_STREAM, 0);
-	if (sock == -1)
-	{
-        	perror("socket");
-	        return EXIT_FAILURE;
-	}
+  // Setup the socket
+  int sock = socket(AF_UNIX, SOCK_STREAM, 0);
+  if (sock == -1) {
+    perror("socket");
+    return EXIT_FAILURE;
+  }
 
-	// Create the struct for connecting to the socket
-	struct sockaddr_un addr;
-	memset(&addr, 0, sizeof(struct sockaddr_un));
-	addr.sun_family = AF_UNIX;
-	strncpy(addr.sun_path, SOCKET_PATH, sizeof(addr.sun_path) - 1);
+  // Create the struct for connecting to the socket
+  struct sockaddr_un addr;
+  memset(&addr, 0, sizeof(struct sockaddr_un));
+  addr.sun_family = AF_UNIX;
+  strncpy(addr.sun_path, SOCKET_PATH, sizeof(addr.sun_path) - 1);
 
-	// Connect to it
-	if (connect(sock, (struct sockaddr*)&addr, sizeof(struct sockaddr_un)) == -1)
-	{
-		perror("connect");
-		return EXIT_FAILURE;
-	}
+  // Connect to it
+  if (connect(sock, (struct sockaddr*)&addr, sizeof(struct sockaddr_un)) == -1) {
+    perror("connect");
+    return EXIT_FAILURE;
+  }
 
-	// Send that we don't want any inputs
-	send(sock, "\0", 1, MSG_NOSIGNAL);
+  // Send that we don't want any inputs
+  send(sock, "\0", 1, MSG_NOSIGNAL);
 
-	// Send how long the data is
-	unsigned char data_length = strlen(argv[1]);
-	send(sock, &data_length, 1, MSG_NOSIGNAL);
+  // Send how long the data is
+  unsigned char data_length = strlen(argv[1]);
+  send(sock, &data_length, 1, MSG_NOSIGNAL);
 
-	// And finally send the data
-	send(sock, argv[1], data_length, MSG_NOSIGNAL);
+  // And finally send the data
+  send(sock, argv[1], data_length, MSG_NOSIGNAL);
 
-	return EXIT_SUCCESS;
+  return EXIT_SUCCESS;
 }
