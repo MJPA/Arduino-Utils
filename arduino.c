@@ -40,7 +40,7 @@
 
 // Apple Mac OS X fixes
 #ifdef __APPLE__
-#define MSG_NOSIGNAL SO_NOSIGPIPE
+#define MSG_NOSIGNAL 0
 #endif
 
 // Location of the socket
@@ -98,7 +98,13 @@ void *handle_clients(void *sock_ptr) {
 
     // NOTE: This loop can be blocked if the client doesn't send any data so
     // ensure you know what connects here actually sends data!
-
+		
+    // OS X doesn't have MSG_NOSIGNAL so we have to do it this way...
+#ifdef __APPLE__
+    int set = 1;
+    setsockopt(new_client, SOL_SOCKET, SO_NOSIGPIPE, (void *)&set, sizeof(int));
+#endif
+    
     // First byte signifies what inputs they want
     unsigned char input_request = 0x00;
     if (recv(new_client, &input_request, 1, MSG_NOSIGNAL) == -1)
@@ -198,8 +204,10 @@ int main (int argc, char ** argv) {
   toptions.c_iflag &= ~(ICANON | ICRNL | IXON | IXOFF | IXANY);
   toptions.c_lflag &= ~(ECHO | ECHOE | ISIG);
   toptions.c_oflag &= ~OPOST;
+#ifndef __APPLE__
   toptions.c_cc[VMIN]  = 0;
   toptions.c_cc[VTIME] = 20;
+#endif
   if (tcsetattr(arduino, TCSANOW, &toptions) < 0) {
     fprintf(stderr, "Couldn't set the term attributes, something went wrong here.\n");
     return EXIT_FAILURE;

@@ -33,7 +33,7 @@
 
 // Apple Mac OS X fixes
 #ifdef __APPLE__
-#define MSG_NOSIGNAL SO_NOSIGPIPE
+#define MSG_NOSIGNAL 0
 #endif
 
 // Location of the socket
@@ -68,8 +68,8 @@ int main (int argc, char ** argv) {
   // Setup the socket
   int sock = socket(AF_UNIX, SOCK_STREAM, 0);
   if (sock == -1) {
-          perror("socket");
-          return EXIT_FAILURE;
+    perror("socket");
+    return EXIT_FAILURE;
   }
 
   // Create the struct for connecting to the socket
@@ -83,6 +83,12 @@ int main (int argc, char ** argv) {
     perror("connect");
     return EXIT_FAILURE;
   }
+
+  // OS X doesn't have MSG_NOSIGNAL so we have to do it this way...
+#ifdef __APPLE__
+  int set = 1;
+  setsockopt(sock, SOL_SOCKET, SO_NOSIGPIPE, (void *)&set, sizeof(int));
+#endif
 
   // Send the inputs request
   send(sock, &bitmask, 1, MSG_NOSIGNAL);

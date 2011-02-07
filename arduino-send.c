@@ -33,7 +33,7 @@
 
 // Apple Mac OS X fixes
 #ifdef __APPLE__
-#define MSG_NOSIGNAL SO_NOSIGPIPE
+#define MSG_NOSIGNAL 0
 #endif
 
 // Location of the socket
@@ -66,6 +66,12 @@ int main (int argc, char ** argv) {
     perror("connect");
     return EXIT_FAILURE;
   }
+
+  // OS X doesn't have MSG_NOSIGNAL so we have to do it this way...
+#ifdef __APPLE__
+  int set = 1;
+  setsockopt(sock, SOL_SOCKET, SO_NOSIGPIPE, (void *)&set, sizeof(int));
+#endif
 
   // Send that we don't want any inputs
   send(sock, "\0", 1, MSG_NOSIGNAL);
