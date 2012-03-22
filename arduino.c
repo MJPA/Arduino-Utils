@@ -37,6 +37,7 @@
 #include <sys/stat.h>
 #include <map>
 #include <list>
+#include <unistd.h>
 
 // Apple Mac OS X fixes
 #ifdef __APPLE__
