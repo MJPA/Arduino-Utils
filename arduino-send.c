@@ -41,7 +41,7 @@
 #define SOCKET_PATH "/tmp/arduino.sock"
 #endif
 
-int main (int argc, char ** argv) {
+int main(int argc, char ** argv) {
   // Ensure we have something to send
   if (argc != 2) {
     fprintf(stderr, "Usage: %s <data>\n", argv[0]);

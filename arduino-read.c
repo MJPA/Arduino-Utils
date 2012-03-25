@@ -47,14 +47,15 @@ void sighandler(int sig) {
   want_to_quit = 1;
 }
 
-int main (int argc, char ** argv) {
+int main(int argc, char ** argv) {
   // Generate the bitmask to send
   unsigned char bitmask = 0x00;
   int i;
   for (i = 1; i < argc; i++) {
     int input = atoi(argv[i]);
-    if (input == 0)
+    if (input == 0) {
       continue;
+    }
 
     bitmask |= (0x01 << (input - 1));
   }
@@ -104,8 +105,9 @@ int main (int argc, char ** argv) {
   while (want_to_quit == 0) {
     char buffer[16];
     int ret = recv(sock, buffer, sizeof(buffer), MSG_NOSIGNAL);
-    if (ret == -1)
+    if (ret == -1) {
       break;
+    }
     printf("%*s", ret, buffer);
   }
   

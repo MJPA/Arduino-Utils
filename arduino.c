@@ -90,8 +90,7 @@ void *handle_clients(void *sock_ptr) {
   while (want_to_quit == 0) {
     // Get a new client (or be told there is none)
     int new_client = accept(sock, NULL, NULL);
-    if (new_client == -1)
-    {
+    if (new_client == -1) {
       perror("accept()");
       want_to_quit = 1;
       break;
@@ -99,23 +98,24 @@ void *handle_clients(void *sock_ptr) {
 
     // NOTE: This loop can be blocked if the client doesn't send any data so
     // ensure you know what connects here actually sends data!
-		
+
     // OS X doesn't have MSG_NOSIGNAL so we have to do it this way...
 #ifdef __APPLE__
     int set = 1;
     setsockopt(new_client, SOL_SOCKET, SO_NOSIGPIPE, (void *)&set, sizeof(int));
 #endif
-    
+
     // First byte signifies what inputs they want
     unsigned char input_request = 0x00;
-    if (recv(new_client, &input_request, 1, MSG_NOSIGNAL) == -1)
+    if (recv(new_client, &input_request, 1, MSG_NOSIGNAL) == -1) {
       continue;
+    }
 
     // If the request isn't 0 they just want the inputs so parse the request
     if (input_request != 0x00) {
       // Set the client socket to be nonblocking so the data doesn't get held up when sending
       fcntl(new_client, F_SETFL, O_NONBLOCK);
-      
+
       // Add the new client request
       get_client_lock();
         client_request cr;
@@ -123,16 +123,19 @@ void *handle_clients(void *sock_ptr) {
         cr.bitmask = input_request;
         client_requests.push_back(cr);
       release_client_lock();
-    } else {
+    }
+    else {
       // They're sending data, next byte gives the length
       unsigned char data_length = 0;
-      if (recv(new_client, &data_length, 1, MSG_NOSIGNAL) == -1)
+      if (recv(new_client, &data_length, 1, MSG_NOSIGNAL) == -1) {
         continue;
+      }
 
       // Read the data now
       char *data = (char*)malloc(data_length);
-      if (recv(new_client, data, data_length, MSG_NOSIGNAL) == -1)
+      if (recv(new_client, data, data_length, MSG_NOSIGNAL) == -1) {
         continue;
+      }
 
       // Send the data to the arduino
       write(arduino, data, data_length);
@@ -143,7 +146,7 @@ void *handle_clients(void *sock_ptr) {
   pthread_exit(0);
 }
 
-int main (int argc, char ** argv) {
+int main(int argc, char ** argv) {
   // Setup the socket
   int sock = socket(AF_UNIX, SOCK_STREAM, 0);
   if (sock == -1) {
@@ -157,7 +160,7 @@ int main (int argc, char ** argv) {
   addr.sun_family = AF_UNIX;
   strncpy(addr.sun_path, SOCKET_PATH, sizeof(addr.sun_path) - 1);
 
-  // Bind to it
+  // Bind to it - attempt to remove an existing socket
   unlink(SOCKET_PATH);
   if (bind(sock, (struct sockaddr*)&addr, sizeof(struct sockaddr_un)) == -1) {
     perror("bind");
@@ -215,7 +218,7 @@ int main (int argc, char ** argv) {
   }
 
   // Fork
-  switch(fork()) {
+  switch (fork()) {
     case -1:
       perror("fork");
       return EXIT_FAILURE;
@@ -246,13 +249,17 @@ int main (int argc, char ** argv) {
     }
 
     // Got it, break.
-    if (c == ROW_SEPARATOR) break;
+    if (c == ROW_SEPARATOR) {
+      break;
+    }
   }
 
-  // We have everything opened and the input is synced and ready to go, spawn client accepting thread
+  // We have everything opened and the input is synced and ready to go,
+  // spawn a client accepting thread
   pthread_t client_thread;
   pthread_create(&client_thread, NULL, handle_clients, &sock);
 
+  // We limit 512 chars per line...
   int idx = 0, pos = 0;
   char line[512];
   memset(line, 0, sizeof(line));
@@ -289,7 +296,8 @@ int main (int argc, char ** argv) {
       if (errno == EAGAIN) {
         usleep(250000);
         continue;
-      } else {
+      }
+      else {
         perror("read()");
         want_to_quit = 1;
         break;
@@ -297,7 +305,9 @@ int main (int argc, char ** argv) {
     }
 
     // No more space - bail as its a problem
-    if (pos == sizeof(line)) break;
+    if (pos == sizeof(line) - 1) {
+      break;
+    }
 
     // Separator or new row - handle what we've got
     if (c == ROW_SEPARATOR || c == FIELD_SEPARATOR) {
@@ -314,8 +324,9 @@ int main (int argc, char ** argv) {
       // Loop through the sockets and send the data
       for (iter = sockets->begin(); iter != sockets->end(); iter++) {
         // Send the data, on error remove the socket
-        if (send(*iter, line, strlen(line), MSG_NOSIGNAL) == -1)
+        if (send(*iter, line, strlen(line), MSG_NOSIGNAL) == -1) {
           dead_sockets.push_back(*iter);
+        }
       }
 
       // Actually remove the dead sockets...
@@ -327,7 +338,8 @@ int main (int argc, char ** argv) {
       // Reset pos and move the input index on
       pos = 0;
       idx = c == FIELD_SEPARATOR ? (idx + 1) : 0;
-    } else {
+    }
+    else {
       // Normal data, save it
       line[pos++] = c;
       line[pos] = 0;
