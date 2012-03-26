@@ -21,7 +21,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
- 
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -41,6 +41,8 @@
 #define SOCKET_PATH "/tmp/arduino.sock"
 #endif
 
+#define ROW_SEPARATOR '\n'
+
 // Quit handler
 static int want_to_quit = 0;
 void sighandler(int sig) {
@@ -48,10 +50,16 @@ void sighandler(int sig) {
 }
 
 int main(int argc, char ** argv) {
+  // Do they just want a single reading?
+  bool test_mode = false;
+  if (argc > 1 && strcmp(argv[1], "-t") == 0) {
+    test_mode = true;
+  }
+
   // Generate the bitmask to send
   unsigned char bitmask = 0x00;
-  int i;
-  for (i = 1; i < argc; i++) {
+  int i = test_mode ? 2 : 1;
+  for (; i < argc; i++) {
     int input = atoi(argv[i]);
     if (input == 0) {
       continue;
@@ -62,7 +70,8 @@ int main(int argc, char ** argv) {
 
   // No inputs?
   if (bitmask == 0x00) {
-    fprintf(stderr, "Usage: %s [input1] [input2] ...\n", argv[0]);
+    fprintf(stderr, "Usage: %s [-t] [input1] [input2] ...\n", argv[0]);
+    fprintf(stderr, "Parameters:\n\t-t\tTest mode - only prints 1 reading per input then exists\n");
     return EXIT_FAILURE;
   }
 
@@ -108,6 +117,18 @@ int main(int argc, char ** argv) {
     if (ret == -1) {
       break;
     }
+
+    // If in test mode, look for the row separator. If it's found, zero out
+    // the rest of the buffer then stop
+    if (test_mode) {
+      char *row_end = strchr(buffer, ROW_SEPARATOR);
+      if (row_end != NULL) {
+        *row_end = 0;
+        printf("%s", buffer);
+        break;
+      }
+    }
+
     printf("%*s", ret, buffer);
   }
   
